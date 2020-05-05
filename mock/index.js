@@ -2,9 +2,17 @@ import Mock from "mockjs";
 import { param2Obj } from "../src/utils";
 
 import user from "./user";
-
+import article from "./article";
+import category from "./category";
+import tag from "./tag";
+import author from "./author";
 const mocks = [
-  ...user
+  ...user,
+  ...tag,
+  ...category,
+  ...category,
+  ...author,
+  ...article
 ];
 
 // for front mock
