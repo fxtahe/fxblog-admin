@@ -64,7 +64,7 @@ const routes = [
     name: "Article",
     meta: {
       title: "Article",
-      icon: "documentation"
+      icon: "file-manage"
     },
     children: [
       {
@@ -74,28 +74,33 @@ const routes = [
         meta: { title: "Article List", icon: "list" }
       },
       {
-        path: "edit",
-        component: () => import("@/views/article/edit"),
-        name: "Edit",
-        meta: { title: "Edit Article", icon: "edit" }
+        path: "create",
+        component: () => import("@/views/article/create"),
+        name: "Create",
+        meta: { title: "Create Article", icon: "edit" }
       }
     ]
   },
   {
-    path: "/example",
+    path: "/sitemap",
+    name: "Sitemap",
     component: Layout,
-    redirect: "/example/list",
-    name: "Example",
     meta: {
-      title: "Example",
-      icon: "example"
+      title: "Sitemap",
+      icon: "tag"
     },
     children: [
       {
-        path: "list",
-        component: () => import("@/views/article/articleList/article-list"),
-        name: "ArticleList",
-        meta: { title: "Article List", icon: "list" }
+        path: "category",
+        name: "Category",
+        component: () => import("@/views/sitemap/category"),
+        meta: { title: "Category", icon: "dashboard" }
+      },
+      {
+        path: "tag",
+        name: "Tag",
+        component: () => import("@/views/sitemap/tag"),
+        meta: { title: "Tag", icon: "dashboard" }
       }
     ]
   },
@@ -112,25 +117,15 @@ const routes = [
     ]
   },
   {
-    path: "/sitemap",
-    name: "Sitemap",
+    path: "/profile",
     component: Layout,
-    meta: {
-      title: "Sitemap",
-      icon: "example"
-    },
+    hidden: true,
     children: [
       {
-        path: "category",
-        name: "Category",
-        component: () => import("@/views/sitemap/category"),
-        meta: { title: "Category", icon: "dashboard" }
-      },
-      {
-        path: "tag",
-        name: "Tag",
-        component: () => import("@/views/sitemap/tag"),
-        meta: { title: "Tag", icon: "dashboard" }
+        path: "profile",
+        name: "Profile",
+        component: () => import("@/views/profile/index"),
+        meta: { title: "Profile", icon: "user" }
       }
     ]
   }

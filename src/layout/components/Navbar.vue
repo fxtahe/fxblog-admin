@@ -16,16 +16,14 @@
         </div>
         <el-dropdown-menu slot="dropdown" class="user-dropdown">
           <router-link to="/">
-            <el-dropdown-item>
-              Home
-            </el-dropdown-item>
+            <el-dropdown-item>Home</el-dropdown-item>
           </router-link>
-          <a
-            target="_blank"
-            href="https://github.com/PanJiaChen/vue-admin-template/"
-          >
+          <a target="_blank" href="https://github.com/PanJiaChen/vue-admin-template/">
             <el-dropdown-item>Github</el-dropdown-item>
           </a>
+          <router-link to="/profile">
+            <el-dropdown-item>个人中心</el-dropdown-item>
+          </router-link>
           <el-dropdown-item divided @click.native="logout">
             <span style="display: block;">Log Out</span>
           </el-dropdown-item>
