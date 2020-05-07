@@ -1,6 +1,7 @@
 <template>
   <div class="container">
-    <div v-if="user">
+    <div class="view-title">个人中心</div>
+    <div v-if="user" class="info-container">
       <el-row :gutter="20">
         <el-col :span="6" :xs="24">
           <user-card :user="user" />
@@ -51,4 +52,9 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
+.info-container {
+  margin-top: 20px;
+  margin-left: 20px;
+  margin-right: 20px;
+}
 </style>
