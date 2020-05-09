@@ -119,7 +119,7 @@ const routes = [
   {
     path: "/profile",
     component: Layout,
-    hidden: true,
+    hidden: false,
     children: [
       {
         path: "profile",

@@ -4,14 +4,18 @@
       <div class="view-title">文章列表</div>
       <el-card class="box-card">
         <el-form ref="form" :model="form" label-width="70px">
-          <el-form-item label="Summary">
-            <el-input
-              :rows="1"
-              class="article-textarea"
-              autosize
-              placeholder="Please enter the content"
-            />
-          </el-form-item>
+          <el-row>
+            <el-col :span="18">
+              <el-form-item label="Summary">
+                <el-input
+                  :rows="1"
+                  class="article-textarea"
+                  autosize
+                  placeholder="Please enter the content"
+                />
+              </el-form-item>
+            </el-col>
+          </el-row>
           <el-row>
             <el-col :span="6">
               <el-form-item label="Category">
@@ -38,9 +42,12 @@
                 </el-radio-group>
               </el-form-item>
             </el-col>
-
-            <el-button type="primary" size="medium">主要按钮</el-button>
-            <el-button size="medium">默认按钮</el-button>
+          </el-row>
+          <el-row type="flex" class="row-bg" justify="center">
+            <el-col :span="6">
+              <el-button type="primary" size="medium">查询</el-button>
+              <el-button size="medium">重置</el-button>
+            </el-col>
           </el-row>
         </el-form>
       </el-card>

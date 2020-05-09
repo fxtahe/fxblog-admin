@@ -48,6 +48,9 @@ export default {
       user: {},
       activeTab: "account"
     };
+  },
+  methods: {
+    submit() {}
   }
 };
 </script>
