@@ -1,43 +1,38 @@
-import { request, get, post, put, del } from "@/utils/request";
+import { get, post, put, del } from "@/utils/request";
 
 class Category {
   // 新增分类
   async createCategory(category) {
-    const res = await post("fxblog/category/add", category);
+    const res = await post("/category/save", category);
     return res;
   }
 
   // 编辑分类
   async updateCategory(category) {
-    const res = await put("fxblog/category/update", category);
+    const res = await put("/category/update", category);
     return res;
   }
 
   // 获取所有分类
   async getCategories() {
-    const res = await get("fxblog/category/categories");
+    const res = await get("/category/list");
+    return res;
+  }
+
+  //搜索分类
+  async searchCategories(val) {
+    return await get(`/category/search/${val}`);
+  }
+  //分页获取分类
+  async getTagPage(current, size) {
+    const res = await get(`/category/page/${current}/${size}`);
     return res;
   }
 
   // 删除某个分类
   async deleteCategory(id) {
-    const res = await del(`fxblog/category/delCategory?id=${id}`);
+    const res = await del(`/category/delete/${id}`);
     return res;
   }
 }
 export default new Category();
-export function getCategories(query) {
-  return request({
-    url: "/fxblog/category/list",
-    method: "get",
-    params: query
-  });
-}
-
-export function getCategory(id) {
-  return request({
-    url: "/fxblog/category/detail",
-    method: "get",
-    params: { id }
-  });
-}

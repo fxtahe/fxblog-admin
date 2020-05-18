@@ -3,40 +3,51 @@
     <div class="contanier" v-if="!isEdit">
       <div class="view-title">文章列表</div>
       <el-card class="box-card">
-        <el-form ref="form" :model="form" label-width="70px">
-          <el-row>
+        <el-form ref="form" :model="queryForm" label-width="70px">
+          <el-row type="flex" justify="center">
             <el-col :span="18">
               <el-form-item label="Summary">
-                <el-input
-                  :rows="1"
-                  class="article-textarea"
-                  autosize
-                  placeholder="Please enter the content"
-                />
+                <el-input class="article-textarea" v-model="queryForm.title" placeholder="请输入标题" />
               </el-form-item>
             </el-col>
           </el-row>
-          <el-row>
+          <el-row type="flex" justify="center">
             <el-col :span="6">
               <el-form-item label="Category">
-                <el-select v-model="form.categoies" placeholder="分类">
-                  <el-option label="区域一" value="shanghai"></el-option>
-                  <el-option label="区域二" value="beijing"></el-option>
+                <el-select v-model="queryForm.category" value-key="id" placeholder="分类">
+                  <el-option
+                    v-for="item in categories"
+                    :key="item.id"
+                    :label="item.categoryName"
+                    :value="item"
+                  ></el-option>
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="6">
               <el-form-item label="Tag">
-                <el-select v-model="form.tags" placeholder="标签">
-                  <el-option label="区域一" value="shanghai"></el-option>
-                  <el-option label="区域二" value="beijing"></el-option>
+                <el-select
+                  v-model="queryForm.tags"
+                  value-key="id"
+                  autosize
+                  filterable
+                  multiple
+                  :multiple-limit="multipleLimit"
+                  placeholder="标签"
+                >
+                  <el-option
+                    v-for="item in tags"
+                    :key="item.id"
+                    :label="item.tagName"
+                    :value="item"
+                  ></el-option>
                 </el-select>
               </el-form-item>
             </el-col>
             <el-col :span="6">
               <el-form-item label="状态">
-                <el-radio-group v-model="form.status">
-                  <el-radio :label="0">全部</el-radio>
+                <el-radio-group v-model="queryForm.state">
+                  <el-radio label>全部</el-radio>
                   <el-radio :label="1">发布</el-radio>
                   <el-radio :label="2">草稿</el-radio>
                 </el-radio-group>
@@ -45,8 +56,8 @@
           </el-row>
           <el-row type="flex" class="row-bg" justify="center">
             <el-col :span="6">
-              <el-button type="primary" size="medium">查询</el-button>
-              <el-button size="medium">重置</el-button>
+              <el-button type="primary" size="medium" @click="query()">查询</el-button>
+              <el-button size="medium" @click="clearQuery()">重置</el-button>
             </el-col>
           </el-row>
         </el-form>
@@ -54,7 +65,7 @@
       <el-card class="box-card" v-loading="tableLoading">
         <article-table
           :total="total"
-          :articleData="articleData"
+          :articles="articles"
           :currentPage="currentPage"
           @handleInfoResult="onHandleInfoResult"
           @handleEdit="onHandleEdit"
@@ -70,41 +81,10 @@
 <script>
 import EditArticle from "./components/edit-article";
 import ArticleTable from "./components/article-table";
-const articleList = [
-  {
-    id: "1",
-    title: "测试数据",
-    created_date: "2020-04-30",
-    cover:
-      "https://camo.githubusercontent.com/21a6f222f2401e6f345e89460662867c3e8388e7/68747470733a2f2f7265736f757263652e736869726d792e6d652f626c6f672f73637265656e73686f742f323031392d30372d32302f736d696c652d626c6f672d61646d696e2d30312e706e67",
-    like: 12,
-    description:
-      "这是一段描述信息，主要是干嘛的你猜，我猜你不会猜，那就是文展描述",
-    content: "content",
-    authors: [{ id: 1, name: "fxtahe" }],
-    public: 1,
-    status: 1,
-    star: 2,
-    tags: [{ id: 1, name: "test" }],
-    category: { id: 1, name: "java" }
-  },
-  {
-    id: "2",
-    title: "测试数据2",
-    created_date: "2020-04-30",
-    cover: "",
-    like: 12,
-    description:
-      "这是一段描述信息，主要是干嘛的你猜，我猜你不会猜，那就是文展描述",
-    authors: [{ id: 1, name: "fxtahe" }],
-    content: "content",
-    public: 1,
-    status: 1,
-    star: 2,
-    tags: [{ id: 1, name: "test" }],
-    category: { id: 1, name: "java" }
-  }
-];
+import article from "@/api/article";
+import category from "@/api/category";
+import tag from "@/api/tag";
+
 export default {
   name: "articleList",
   components: {
@@ -113,47 +93,80 @@ export default {
   },
   data() {
     return {
-      categories: [],
-      authors: [],
+      multipleLimit: 2,
+      categories: {},
       tags: [],
       currentPage: 1,
+      size: 10,
       total: 0,
       tableLoading: false,
-      articleData: articleList,
+      articles: [],
       isEdit: false,
-      form: {
-        name: "",
-        tags: "",
-        date: [],
-        type: [],
-        status: 0,
-        desc: ""
-      }
+      queryForm: {},
+      editForm: {}
     };
   },
   methods: {
-    onSubmit() {
-      console.log("submit!");
+    async getTags() {
+      const { data } = await tag.getTags();
+      this.tags = data;
     },
+    async getCategoies() {
+      const { data } = await category.getCategories();
+      this.categories = data;
+    },
+    async query(current = 1) {
+      this.tableLoading = true;
+      try {
+        let param = {
+          size: this.size,
+          data: this.form,
+          current
+        };
+
+        const { data } = await article.getArticlePage(param);
+        console.log(data);
+        if (data) {
+          console.log(data.data);
+          this.currentPage = data[current];
+          this.total = data.total;
+          this.articles = data.data;
+        }
+        this.tableLoading = false;
+      } catch (e) {
+        this.tableLoading = false;
+        this.$message.error("查询失败");
+      }
+    },
+    clearQuery() {
+      if (this.queryForm) {
+        this.queryForm = {};
+        this.query();
+      }
+    },
+    onSubmit() {},
     onHandleInfoResult(flag) {},
-    onHandleCurrentPage(page) {},
+    onHandleCurrentPage(current) {
+      this.query(current);
+    },
     onHandleBack(flag) {
       this.isEdit = false;
     },
     async onHandleEdit(data) {
+      console.log(data);
       let edit = {
         id: data.id,
         title: data.title,
         description: data.description,
-        authors: data.authors.map(v => v.id),
-        createdDate: data.created_date,
+        author: data.author,
+        createdDate: data.createDate,
+        updateDate: data.UpdateDate,
         cover: data.cover,
         content: "",
         categoryId: data.category.id,
         tags: data.tags.map(v => v.id),
-        public: data.public,
-        status: data.status,
-        star: data.star
+        state: data.state,
+        feature: data.feature
       };
       try {
         const res = articleList[1];
@@ -165,6 +178,11 @@ export default {
         console.log(e);
       }
     }
+  },
+  created() {
+    this.getTags();
+    this.getCategoies();
+    this.query();
   }
 };
 </script>
@@ -172,6 +190,15 @@ export default {
 @import "~@/styles/mixin.scss";
 .box-card {
   margin: 20px 30px;
+}
+.el-row {
+  margin-bottom: 8px;
+  &:first-child {
+    margin-top: 10px;
+  }
+  &:last-child {
+    margin-bottom: 0;
+  }
 }
 .container {
   position: relative;

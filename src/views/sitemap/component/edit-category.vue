@@ -9,8 +9,8 @@
       v-loading="loading"
       :rules="rules"
     >
-      <el-form-item label="名称" prop="name">
-        <el-input size="medium" clearable v-model="form.name" placeholder="请输入分类名称"></el-input>
+      <el-form-item label="名称" prop="categoryName">
+        <el-input size="medium" clearable v-model="form.categoryName" placeholder="请输入分类名称"></el-input>
       </el-form-item>
       <el-form-item label="封面" prop="cover">
         <el-input v-model="form.cover" clearable size="medium" placeholder="请输入封面地址"></el-input>
@@ -42,26 +42,20 @@ export default {
       type: String,
       default: "add"
     },
-
     info: {
       type: Object,
       default: () => {}
-    },
-
-    id: {
-      type: Number,
-      default: undefined
     }
   },
   data() {
     const checkName = (rule, value, callback) => {
-      if (value === "") {
+      if (value === "" || typeof value === "undefined") {
         callback(new Error("分类名不能为空"));
       }
       callback();
     };
     const checkDescription = (rule, value, callback) => {
-      if (value === "") {
+      if (value === "" || typeof value === "undefined") {
         callback(new Error("请填写描述信息"));
       }
       callback();
@@ -69,16 +63,19 @@ export default {
     return {
       loading: false,
       form: {
-        name: "",
+        id: "",
+        categoryName: "",
         cover: "",
         description: ""
       },
       rules: {
-        name: [{ validator: checkName, trigger: "blur", required: true }],
+        categoryName: [
+          { validator: checkName, trigger: "blur", required: true }
+        ],
         cover: [
           {
             type: "url",
-            message: "请输入正确的头像地址",
+            message: "请输入正确的封面地址",
             trigger: "blur",
             required: false
           }
@@ -98,7 +95,8 @@ export default {
       }
     },
     setInfo() {
-      this.form.name = this.info.name;
+      this.form.id = this.info.id;
+      this.form.categoryName = this.info.categoryName;
       this.form.cover = this.info.cover;
       this.form.description = this.info.description;
     },
@@ -110,24 +108,19 @@ export default {
             try {
               this.loading = true;
               const res = await category.createCategory(this.form);
-              if (res.errorCode === 0) {
-                this.loading = false;
-                this.$notify.success(`${res.msg}`);
-                this.$emit("handleInfoResult", true);
-                this.resetForm(formName);
-              } else {
-                this.loading = false;
-                this.$notify.error(`${res.msg}`);
-              }
+              this.loading = false;
+              this.$message.success("添加分类成功");
+              this.$emit("handleInfoResult", true);
+              this.resetForm(formName);
             } catch (e) {
               this.loading = false;
-              // eslint-disable-next-line no-console
-              console.log(e);
+
+              this.$message.success("添加分类失败");
             }
           } else {
             // 更新分类
             if (
-              this.form.name === this.info.name &&
+              this.form.categoryName === this.info.categoryName &&
               this.form.cover === this.info.cover &&
               this.form.description === this.info.description
             ) {
@@ -136,19 +129,14 @@ export default {
             }
             try {
               this.loading = true;
-              const res = await category.updateCategory(this.id, this.form);
-              if (res.errorCode === 0) {
-                this.loading = false;
-                this.$message.success(`${res.msg}`);
-                this.$emit("handleInfoResult", true);
-              } else {
-                this.loading = false;
-                this.$message.error(`${res.msg}`);
-              }
+              const res = await category.updateCategory(this.form);
+
+              this.loading = false;
+              this.$message.success("更新成功");
+              this.$emit("handleInfoResult", true);
             } catch (e) {
               this.loading = false;
-              // eslint-disable-next-line no-console
-              console.log(e);
+              this.$message.error("更新失败");
             }
           }
         } else {

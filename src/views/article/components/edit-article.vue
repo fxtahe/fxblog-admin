@@ -92,18 +92,20 @@
 <script>
 import MDinput from "@/components/MDinput";
 import MarkdownEditor from "@/components/MarkdownEditor/pro";
+import article from "@/api/article";
+import category from "@/api/category";
+import tag from "@/api/tag";
 import { validURL } from "@/utils/validate";
 const defaultForm = {
-  status: "draft",
+  id: undefined,
   title: "", // 文章题目
   content: "", // 文章内容
-  content_short: "", // 文章摘要
-  source_uri: "", // 文章外链
-  image_uri: "", // 文章图片
-  display_time: undefined, // 前台展示时间
-  id: undefined,
-  platforms: ["a-platform"],
-  comment_disabled: false
+  excerpt: "", // 文章摘要
+  authorId: "", //作者
+  markdown: "", //markdown
+  feature: "", //推荐
+  cover: "", //封面
+  state: "" //状态
 };
 export default {
   components: {

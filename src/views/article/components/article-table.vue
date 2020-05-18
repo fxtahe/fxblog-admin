@@ -1,17 +1,21 @@
 <template>
   <div class="article-table">
-    <el-table :data="articleData" v-loading="loading">
+    <el-table :data="articles" v-loading="loading">
       <el-table-column type="expand">
         <template slot-scope="props">
           <el-form inline label-position="left" label-width="80px" class="demo-table-expand">
-            <el-form-item label="分类">
-              <span>{{ props.row.category.name }}</span>
+            <el-form-item label="作者" v-if="props.row.author">
+              <span>{{ props.row.author.authorName }}</span>
+            </el-form-item>
+            <el-form-item label="分类" v-if="props.row.category">
+              <span>{{ props.row.category.categoryName }}</span>
             </el-form-item>
             <el-form-item label="浏览次数">
               <span>{{ props.row.views }}</span>
             </el-form-item>
             <el-form-item label="标签">
-              <span class="tag-item" v-for="tag in props.row.tags" :key="tag.id">{{ tag.name }}</span>
+              <el-tag class="tag-item" v-for="tag in props.row.tags" :key="tag.id">{{tag.tagName}}</el-tag>
+              <!-- <span class="tag-item" v-for="tag in props.row.tags" :key="tag.id">{{ tag.tagName }}</span> -->
             </el-form-item>
             <el-form-item label="赞">
               <span>{{ props.row.like }}</span>
@@ -26,40 +30,19 @@
         </template>
       </el-table-column>
       <el-table-column prop="title" label="标题"></el-table-column>
-      <el-table-column prop="created_date" label="发布时间" sortable width="170"></el-table-column>
-      <el-table-column prop="authors" label="作者">
-        <template slot-scope="scope">
-          <span
-            class="author-item"
-            v-for="author in scope.row.authors"
-            :key="author.id"
-          >{{ author.name }}</span>
-        </template>
-      </el-table-column>
-      <el-table-column prop="public" label="是否公开" :formatter="row => publicMap[row.public]"></el-table-column>
-      <el-table-column prop="status" label="状态" :formatter="row => statusMap[row.status]"></el-table-column>
-      <el-table-column prop="star" label="设为精选">
+      <el-table-column prop="createDate" label="发布时间" sortable width="170"></el-table-column>
+      <el-table-column prop="status" label="状态" :formatter="row => stateMap[row.state]"></el-table-column>
+      <el-table-column prop="star" label="推荐">
         <template slot-scope="scope">
           <i
-            :class="['star el-icon-star-off', scope.row.star === 2 ? 'star-on' : '']"
-            @click="setArticleStar(scope.row)"
+            :class="['star el-icon-star-off', scope.row.feature === 1 ? 'star-on' : '']"
+            @click="setFeature(scope.row)"
           ></i>
         </template>
       </el-table-column>
       <el-table-column label="操作" fixed="right" width="250">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="editArticle(scope.row)">编辑</el-button>
-          <el-button
-            type="primary"
-            size="mini"
-            @click="setArticlePrivate(scope.row)"
-          >{{scope.row.public === 1 ? '私密' : '公开'}}</el-button>
-          <el-button
-            v-if="scope.row.comment_count"
-            type="primary"
-            size="mini"
-            @click="showComments(scope.row)"
-          >评论</el-button>
           <el-button type="danger" size="mini" @click="deleteArticle(scope.row)">删除</el-button>
         </template>
       </el-table-column>
@@ -78,57 +61,18 @@
 </template>
 
 <script>
-const articleList = [
-  {
-    id: "1",
-    title: "测试数据",
-    created_date: "2020-04-30",
-    cover: "",
-    like: 12,
-    description:
-      "这是一段描述信息，主要是干嘛的你猜，我猜你不会猜，那就是文展描述",
-    content: "content",
-    authors: [{ id: 1, name: "fxtahe" }],
-    public: 1,
-    status: 1,
-    star: 2,
-    tags: [{ id: 1, name: "test" }],
-    category: { id: 1, name: "java" }
-  },
-  {
-    id: "2",
-    title: "测试数据2",
-    created_date: "2020-04-30",
-    cover: "",
-    like: 12,
-    description:
-      "这是一段描述信息，主要是干嘛的你猜，我猜你不会猜，那就是文展描述",
-    authors: [{ id: 1, name: "fxtahe" }],
-    content: "content",
-    public: 1,
-    status: 1,
-    star: 2,
-    tags: [{ id: 1, name: "test" }],
-    category: { id: 1, name: "java" }
-  }
-];
-const publicMap = {
-  1: "公开",
-  2: "私密"
+const stateMap = {
+  1: "草稿",
+  2: "发布",
+  3: "已删除"
 };
-
-const statusMap = {
-  1: "已发布",
-  2: "草稿"
-};
-
 export default {
   components: {},
 
   props: {
-    articleData: {
+    articles: {
       type: Array,
-      default: () => articleList
+      default: () => {}
     },
 
     currentPage: {
@@ -146,8 +90,7 @@ export default {
     return {
       currentId: null,
       loading: false,
-      publicMap,
-      statusMap,
+      stateMap: stateMap,
       dialogVisible: false,
       pageSize: 10
     };
@@ -166,11 +109,8 @@ export default {
       this.$emit("handleEdit", val);
     },
 
-    // 设文章为 公开 / 私密
-    async setArticlePrivate(val) {},
-
-    // 设置文章为 精选 / 非精选
-    async setArticleStar(val) {},
+    // 推荐文章
+    async setFeature(val) {},
 
     showComments(val) {
       this.currentId = val.id;
@@ -183,7 +123,9 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.tag-item,
+.tag-item {
+  margin-right: 4px;
+}
 .author-item {
   margin-right: 4px;
 

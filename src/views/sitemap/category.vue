@@ -13,7 +13,7 @@
           maxlength="10"
           @clear="clearSearch"
         ></el-input>
-        <el-button class="search-btn" type="primary" size="medium" @click="search">搜索</el-button>
+        <el-button class="search-btn" type="primary" size="medium" @click="search(searchVal)">搜索</el-button>
       </div>
     </div>
     <el-card class="box-card">
@@ -30,7 +30,8 @@
             </el-form>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="名称"></el-table-column>
+        <el-table-column prop="id" label="ID"></el-table-column>
+        <el-table-column prop="categoryName" label="名称"></el-table-column>
         <el-table-column label="操作" fixed="right" width="175">
           <template slot-scope="scope">
             <el-button type="primary" size="mini" @click="editCategory(scope.row)">编辑</el-button>
@@ -45,7 +46,6 @@
         ref="info"
         :editType="editType"
         :info="form"
-        :id="id"
         @handleInfoResult="onHandleInfoResult"
       ></edit-category>
     </el-dialog>
@@ -54,22 +54,7 @@
 <script>
 import EditCategory from "./component/edit-category";
 import category from "@/api/category";
-const categories = [
-  {
-    id: 1,
-    name: "java",
-    description: "这是一段感人肺腑的经历",
-    cover:
-      "https://resource.shirmy.me/blog/screenshot/2019-07-20/smile-blog-admin-01.png"
-  },
-  {
-    id: 2,
-    name: "python",
-    description: "这是一段喜极而泣的经历",
-    cover:
-      "https://resource.shirmy.me/blog/screenshot/2019-07-20/smile-blog-admin-01.png"
-  }
-];
+
 export default {
   components: {
     EditCategory
@@ -82,22 +67,32 @@ export default {
       dialogVisible: false,
       categories: [],
       form: {
-        name: "",
+        id: "",
+        categoryName: "",
         cover: "",
         description: ""
       }
     };
   },
   methods: {
-    search() {
-      if (!this.searchVal) {
-        this.$message.warning("搜索内容不能为空");
-        return;
+    async search(val) {
+      if (val != null && val.trim() != "" && typeof val != "undefined") {
+        try {
+          this.loading = true;
+          const { data } = await category.searchCategories(val);
+          this.categories = data;
+          this.loading = false;
+        } catch (e) {
+          this.$message({ type: "success", message: "查询失败" });
+          this.loading = false;
+        }
+      } else {
+        this.getCategories();
       }
-      this.getCategories();
     },
 
     clearSearch() {
+      this.searchVal = "";
       this.getCategories();
     },
 
@@ -105,7 +100,8 @@ export default {
     async getCategories() {
       try {
         this.loading = true;
-        this.categories = await category.getCategories();
+        const { data } = await category.getCategories();
+        this.categories = data;
         this.loading = false;
       } catch (e) {
         this.loading = false;
@@ -121,8 +117,8 @@ export default {
 
     editCategory(val) {
       this.editType = "edit";
-      this.id = val.id;
-      this.form.name = val.name;
+      this.form.id = val.id;
+      this.form.categoryName = val.categoryName;
       this.form.cover = val.cover;
       this.form.description = val.description;
       this.dialogVisible = true;
@@ -138,18 +134,13 @@ export default {
           try {
             this.loading = true;
             const res = await category.deleteCategory(id);
-            if (res.errorCode === 0) {
-              this.loading = false;
-              await this.getCategories();
-              this.$message.success(`${res.msg}`);
-            } else {
-              this.loading = false;
-              this.$message.error(`${res.msg}`);
-            }
+            await this.getCategories();
+            this.loading = false;
+
+            this.$message.success("删除成功");
           } catch (e) {
             this.loading = false;
-            // eslint-disable-next-line no-console
-            console.log(e);
+            this.$message.error("删除失败");
           }
         })
         .catch(() => {

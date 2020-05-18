@@ -12,7 +12,7 @@
           maxlength="10"
           @clear="clearSearch"
         ></el-input>
-        <el-button class="search-btn" type="primary" size="medium" @click="search">搜索</el-button>
+        <el-button class="search-btn" type="primary" size="medium" @click="search(searchVal)">搜索</el-button>
       </div>
     </div>
     <el-card class="box-card">
@@ -26,7 +26,7 @@
         <el-table-column min-width="300px" label="名称">
           <template slot-scope="{row}">
             <template v-if="row.edit">
-              <el-input v-model="row.name" class="edit-input" size="small" />
+              <el-input v-model="row.tagName" class="edit-input" size="small" />
               <el-button
                 class="cancel-btn"
                 size="small"
@@ -35,7 +35,7 @@
                 @click="cancelEdit(row)"
               >取消</el-button>
             </template>
-            <span v-else>{{ row.name }}</span>
+            <span v-else>{{ row.tagName }}</span>
           </template>
         </el-table-column>
 
@@ -49,7 +49,7 @@
               @click="confirmEdit(row)"
             >确认</el-button>
             <el-button v-else type="primary" size="small" @click="row.edit=!row.edit">编辑</el-button>
-            <el-button type="danger" size="mini" @click="deleteTag(scope.row)">删除</el-button>
+            <el-button type="danger" size="mini" @click="deleteTag(row)">删除</el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -57,56 +57,107 @@
   </div>
 </template>
 <script>
-import { getTags } from "@/api/tag";
-const tags = [
-  {
-    id: 1,
-    name: "seata"
-  },
-  {
-    id: 2,
-    name: "apollo"
-  }
-];
+import tag from "@/api/tag";
+
 export default {
   name: "Tag",
   data() {
     return {
       loading: false,
       searchVal: "",
-      tags: tags
+      tags: []
     };
   },
   methods: {
     async getTags() {
-      this.loading = true;
+      try {
+        this.loading = true;
 
-      //   const { data } = await getTags();
-      //   const items = data.items;
-      this.tags = tags.map(v => {
-        this.$set(v, "edit", false); // https://vuejs.org/v2/guide/reactivity.html
-        v.originalName = v.name; //  will be used when user click the cancel botton
-        return v;
-      });
-      this.loading = false;
+        const { data } = await tag.getTags();
+
+        this.tags = data.map(v => {
+          this.$set(v, "edit", false); // https://vuejs.org/v2/guide/reactivity.html
+          v.originalName = v.tagName; //  will be used when user click the cancel botton
+          return v;
+        });
+        this.loading = false;
+      } catch (e) {
+        this.$message.error("获取标签失败");
+        this.loading = false;
+      }
     },
     cancelEdit(row) {
-      row.name = row.originalName;
+      row.tagName = row.originalName;
       row.edit = false;
-      this.$message({
-        message: "The title has been restored to the original value",
-        type: "warning"
-      });
     },
-    confirmEdit(row) {
+    async confirmEdit(row) {
       row.edit = false;
-      row.originalName = row.name;
-      this.$message({
-        message: "The title has been edited",
-        type: "success"
-      });
+      row.originalName = row.tagName;
+      try {
+        await tag.updateTag(row);
+        this.$message({
+          message: "修改成功",
+          type: "success"
+        });
+      } catch (e) {
+        this.$message({
+          message: "修改失败",
+          type: "success"
+        });
+      }
+    },
+    deleteTag(val) {
+      this.$confirm("此操作将永久删除该文件, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(async () => {
+          try {
+            this.loading = true;
+            let res = await tag.deleteTag(val.id);
+            this.loading = false;
+            await this.getTags();
+            this.$message({
+              type: "success",
+              message: "删除成功"
+            });
+          } catch (e) {
+            this.$message.error("删除失败");
+            this.loading = false;
+          }
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除"
+          });
+        });
+    },
+    async search(val) {
+      if (val != null && val.trim() != "" && typeof val != "undefined") {
+        try {
+          this.loading = true;
+
+          const { data } = await tag.searchTags(val);
+
+          this.tags = data.map(v => {
+            this.$set(v, "edit", false); // https://vuejs.org/v2/guide/reactivity.html
+            v.originalName = v.tagName; //  will be used when user click the cancel botton
+            return v;
+          });
+          this.loading = false;
+        } catch (e) {
+          this.$message.error("获取标签失败");
+          this.loading = false;
+          console.log(e);
+        }
+      } else {
+        this.getTags;
+      }
     },
     clearSearch() {
+      this.searchVal = "";
       this.getTags();
     }
   },
