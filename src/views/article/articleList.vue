@@ -74,7 +74,13 @@
       </el-card>
     </div>
     <div v-if="isEdit">
-      <edit-article :isEdit="true" @handleBack="onHandleBack"></edit-article>
+      <edit-article
+        :isEdit="isEdit"
+        :infoCategories="categories"
+        :infoTags="tags"
+        :form="editForm"
+        @handleBack="onHandleBack"
+      ></edit-article>
     </div>
   </div>
 </template>
@@ -94,7 +100,7 @@ export default {
   data() {
     return {
       multipleLimit: 2,
-      categories: {},
+      categories: [],
       tags: [],
       currentPage: 1,
       size: 10,
@@ -153,25 +159,22 @@ export default {
       this.isEdit = false;
     },
     async onHandleEdit(data) {
-      console.log(data);
       let edit = {
         id: data.id,
         title: data.title,
-        description: data.description,
+        excerpt: data.excerpt,
         author: data.author,
         createdDate: data.createDate,
         updateDate: data.UpdateDate,
         cover: data.cover,
-        content: "",
-        categoryId: data.category.id,
+        content: data.content,
+        category: data.category,
         tags: data.tags.map(v => v.id),
         state: data.state,
         feature: data.feature
       };
       try {
-        const res = articleList[1];
-        edit.content = res.content;
-        this.form = edit;
+        this.editForm = edit;
         this.isEdit = true;
       } catch (e) {
         // eslint-disable-next-line no-console

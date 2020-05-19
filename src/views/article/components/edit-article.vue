@@ -30,33 +30,61 @@
           <el-row>
             <el-col :span="8">
               <el-form-item style="margin-bottom: 40px;" label-width="70px" label="Category">
-                <el-select v-model="categoryValue" placeholder="请选择分类">
+                <el-select v-model="postForm.category" value-key="id" placeholder="请选择分类">
                   <el-option
                     v-for="item in categories"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
+                    :key="item.id"
+                    :label="item.categoryName"
+                    :value="item"
                   ></el-option>
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :span="8">
+            <el-col :span="16">
               <el-form-item style="margin-bottom: 40px;" label-width="70px" label="Tag">
+                <el-tag
+                  :key="tag.id"
+                  v-for="tag in postForm.tags"
+                  closable
+                  :disable-transitions="false"
+                  @close="handleClose(tag)"
+                >{{tag.tagName}}</el-tag>
                 <el-select
-                  v-model="tagValue"
-                  multiple
+                  v-model="postForm.tags"
+                  value-key="id"
                   filterable
                   allow-create
-                  default-first-option
-                  placeholder="请选择标签"
+                  multiple
+                  ref="saveTagSelect"
+                  v-if="tagVisible"
+                  @change="handleInputConfirm"
+                  @focus="handleBlur"
+                  v-show="postForm.tags.length<3"
                 >
                   <el-option
                     v-for="item in tags"
-                    :key="item.value"
-                    :label="item.label"
-                    :value="item.value"
+                    :key="item.id"
+                    :label="item.tagName"
+                    :value="item"
                   ></el-option>
                 </el-select>
+                <!-- <el-input
+                  class="input-new-tag"
+                  v-if="tagVisible "
+                  v-model="tagValue"
+                  ref="saveTagInput"
+                  size="small"
+                  @keyup.enter.native="handleInputConfirm"
+                  @blur="handleInputConfirm"
+                  v-show="tags.length<5"
+                ></el-input>-->
+                <el-button
+                  v-else
+                  class="button-new-tag"
+                  size="small"
+                  @click="showInput"
+                  v-show="postForm.tags.length<3"
+                >+ New Tag</el-button>
               </el-form-item>
             </el-col>
           </el-row>
@@ -72,7 +100,7 @@
           <el-row>
             <el-form-item style="margin-bottom: 40px;" label-width="70px" label="Excerpt">
               <el-input
-                v-model="postForm.content_short"
+                v-model="postForm.excerpt"
                 :rows="1"
                 type="textarea"
                 class="article-textarea"
@@ -105,7 +133,8 @@ const defaultForm = {
   markdown: "", //markdown
   feature: "", //推荐
   cover: "", //封面
-  state: "" //状态
+  state: "", //状态
+  tags: [{ id: 1, tagName: "seata" }]
 };
 export default {
   components: {
@@ -116,6 +145,19 @@ export default {
     isEdit: {
       type: Boolean,
       default: false
+    },
+    infoCategories: {
+      type: Array,
+      default: () => []
+    },
+
+    infoTags: {
+      type: Array,
+      default: () => []
+    },
+    form: {
+      type: Object,
+      default: () => {}
     }
   },
   data() {
@@ -148,53 +190,67 @@ export default {
     return {
       postForm: Object.assign({}, defaultForm),
       loading: false,
-      userListOptions: [],
+      tagVisible: false,
+      tagValue: "",
       categoryValue: "",
-      categories: [
-        {
-          value: "选项1",
-          label: "黄金糕"
-        },
-        {
-          value: "选项2",
-          label: "双皮奶"
-        },
-        {
-          value: "选项3",
-          label: "蚵仔煎"
-        },
-        {
-          value: "选项4",
-          label: "龙须面"
-        },
-        {
-          value: "选项5",
-          label: "北京烤鸭"
-        }
-      ],
-      tags: [
-        {
-          value: "HTML",
-          label: "HTML"
-        },
-        {
-          value: "CSS",
-          label: "CSS"
-        },
-        {
-          value: "JavaScript",
-          label: "JavaScript"
-        }
-      ],
-      tagValue: [],
+      categories: [],
+      tags: [],
       rules: {
         image_uri: [{ validator: validateRequire }],
         title: [{ validator: validateRequire }],
         content: [{ validator: validateRequire }],
         source_uri: [{ validator: validateSourceUri, trigger: "blur" }]
-      },
-      tempRoute: {}
+      }
     };
+  },
+  methods: {
+    async getTags() {
+      const { data } = await tag.getTags();
+      this.tags = data;
+    },
+    async getCategoies() {
+      const { data } = await category.getCategories();
+      this.categories = data;
+    },
+    fitlerAll(arr) {
+      let result = [].concat(arr);
+      result.shift();
+      return result;
+    },
+    handleClose(tag) {
+      this.postForm.tags.splice(this.postForm.tags.indexOf(tag), 1);
+    },
+    handleBlur(val) {
+      this.$refs.saveTagSelect.$refs.input.blur = () => {
+        console.log(0);
+        this.tagVisible = false;
+      };
+    },
+    showInput() {
+      this.tagVisible = true;
+    },
+
+    handleInputConfirm(val) {
+      // let inputValue = this.tagValue;
+      // if (inputValue) {
+      //   this.tags.push(inputValue);
+      // }
+      //this.postForm.tags.push(val);
+      this.tagVisible = false;
+      console.log(this.postForm.tags);
+      // this.tagValue = "";
+    }
+  },
+
+  created() {
+    if (this.isEdit) {
+      this.categories = this.infoCategories;
+      this.tags = this.infoTags;
+      this.postForm = JSON.parse(JSON.stringify(this.form));
+    } else {
+      this.getTags();
+      this.getCategoies();
+    }
   }
 };
 </script>
@@ -254,6 +310,11 @@ export default {
     }
   }
 }
+.el-select__tags {
+  span {
+    display: none;
+  }
+}
 .box-card {
   margin: 20px 30px;
 }
@@ -263,5 +324,20 @@ export default {
   &:focus {
     background: #b3d8ff;
   }
+}
+.el-tag + .el-tag {
+  margin-left: 10px;
+}
+.button-new-tag {
+  margin-left: 10px;
+  height: 32px;
+  line-height: 30px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.input-new-tag {
+  width: 90px;
+  margin-left: 10px;
+  vertical-align: bottom;
 }
 </style>

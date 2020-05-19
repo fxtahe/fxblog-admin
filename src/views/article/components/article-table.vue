@@ -24,7 +24,7 @@
               <img class="cover" :src="props.row.cover" />
             </el-form-item>
             <el-form-item label="描述">
-              <span>{{ props.row.description }}</span>
+              <span>{{ props.row.excerpt }}</span>
             </el-form-item>
           </el-form>
         </template>
