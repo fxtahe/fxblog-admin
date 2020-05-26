@@ -9,8 +9,12 @@
         {{ isEdit ? " 编辑文章" : " 添加文章" }}
       </div>
       <div>
-        <el-button style="float: right;" type="info">草稿</el-button>
-        <el-button style="float: right;margin-right: 10px" type="success">发布</el-button>
+        <el-button style="float: right;" type="info" @click="submit('postForm','draft')">草稿</el-button>
+        <el-button
+          style="float: right;margin-right: 10px"
+          type="success"
+          @click="submit('postForm','post')"
+        >发布</el-button>
       </div>
     </div>
     <el-card class="box-card">
@@ -21,10 +25,6 @@
               <el-form-item style="margin-bottom: 40px;" prop="title">
                 <MDinput v-model="postForm.title" :maxlength="100" name="name" required>Title</MDinput>
               </el-form-item>
-
-              <div class="postInfo-container">
-                <el-row></el-row>
-              </div>
             </el-col>
           </el-row>
           <el-row>
@@ -40,44 +40,30 @@
                 </el-select>
               </el-form-item>
             </el-col>
-            <el-col :span="16">
-              <el-form-item style="margin-bottom: 40px;" label-width="70px" label="Tag">
+            <el-col :span="10">
+              <el-form-item
+                style="margin-bottom: 40px;"
+                label-width="70px"
+                label="Tag"
+                v-if="reload"
+              >
                 <el-tag
-                  :key="tag.id"
+                  :key="tag.tagName"
                   v-for="tag in postForm.tags"
                   closable
                   :disable-transitions="false"
                   @close="handleClose(tag)"
                 >{{tag.tagName}}</el-tag>
-                <el-select
-                  v-model="postForm.tags"
-                  value-key="id"
-                  filterable
-                  allow-create
-                  multiple
-                  ref="saveTagSelect"
+                <el-autocomplete
+                  class="inline-input input-new-tag"
                   v-if="tagVisible"
-                  @change="handleInputConfirm"
-                  @focus="handleBlur"
-                  v-show="postForm.tags.length<3"
-                >
-                  <el-option
-                    v-for="item in tags"
-                    :key="item.id"
-                    :label="item.tagName"
-                    :value="item"
-                  ></el-option>
-                </el-select>
-                <!-- <el-input
-                  class="input-new-tag"
-                  v-if="tagVisible "
+                  ref="saveInputTag"
                   v-model="tagValue"
-                  ref="saveTagInput"
+                  value-key="tagName"
                   size="small"
-                  @keyup.enter.native="handleInputConfirm"
-                  @blur="handleInputConfirm"
-                  v-show="tags.length<5"
-                ></el-input>-->
+                  :fetch-suggestions="querySearch"
+                  @select="handleSelect"
+                ></el-autocomplete>
                 <el-button
                   v-else
                   class="button-new-tag"
@@ -87,30 +73,52 @@
                 >+ New Tag</el-button>
               </el-form-item>
             </el-col>
-          </el-row>
-          <el-row>
-            <el-col :span="18">
-              <el-form-item style="margin-bottom: 40px;" label-width="70px" label="Cover">
-                <el-input placeholder="图片链接">
-                  <el-button :rows="1" class="upload-btn" slot="append" icon="el-icon-upload"></el-button>
-                </el-input>
+            <el-col :span="6">
+              <el-form-item style="margin-bottom: 40px;" label-width="70px" label="Feature">
+                <el-switch
+                  v-model="postForm.feature"
+                  active-color="#13ce66"
+                  inactive-color="#ff4949"
+                ></el-switch>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row>
-            <el-form-item style="margin-bottom: 40px;" label-width="70px" label="Excerpt">
+            <el-col :span="18">
+              <el-form-item
+                style="margin-bottom: 40px;"
+                label-width="70px"
+                label="Cover"
+                prop="cover"
+              >
+                <image-upload v-if="reload" :value.sync="postForm.cover"></image-upload>
+              </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-form-item
+              style="margin-bottom: 40px;"
+              label-width="70px"
+              label="Excerpt"
+              prop="excerpt"
+            >
               <el-input
                 v-model="postForm.excerpt"
                 :rows="1"
                 type="textarea"
                 class="article-textarea"
                 autosize
-                placeholder="Please enter the content"
+                placeholder="请输入摘要"
               />
             </el-form-item>
           </el-row>
           <el-form-item prop="content" style="margin-bottom: 30px;">
-            <markdown-editor />
+            <markdown-editor
+              v-if="reload"
+              ref="markdown"
+              v-model="postForm.content"
+              :height="1000"
+            />
           </el-form-item>
         </div>
       </el-form>
@@ -120,6 +128,7 @@
 <script>
 import MDinput from "@/components/MDinput";
 import MarkdownEditor from "@/components/MarkdownEditor/pro";
+import ImageUpload from "@/components/ImageUpload";
 import article from "@/api/article";
 import category from "@/api/category";
 import tag from "@/api/tag";
@@ -127,19 +136,25 @@ import { validURL } from "@/utils/validate";
 const defaultForm = {
   id: undefined,
   title: "", // 文章题目
-  content: "", // 文章内容
+  content: "show time", // 文章内容
   excerpt: "", // 文章摘要
   authorId: "", //作者
-  markdown: "", //markdown
-  feature: "", //推荐
+  content: "",
+  feature: false, //推荐
   cover: "", //封面
   state: "", //状态
-  tags: [{ id: 1, tagName: "seata" }]
+  tags: [],
+  category: {}
+};
+const states = {
+  draft: 1,
+  post: 2
 };
 export default {
   components: {
     MarkdownEditor,
-    MDinput
+    MDinput,
+    ImageUpload
   },
   props: {
     isEdit: {
@@ -163,25 +178,28 @@ export default {
   data() {
     const validateRequire = (rule, value, callback) => {
       if (value === "") {
-        this.$message({
-          message: rule.field + "为必传项",
-          type: "error"
-        });
-        callback(new Error(rule.field + "为必传项"));
+        callback(new Error(rule.field + "为必填项"));
       } else {
         callback();
       }
     };
-    const validateSourceUri = (rule, value, callback) => {
+    const validateContentRequire = (rule, value, callback) => {
+      if (value === "") {
+        this.$message({
+          message: "内容不能为空",
+          type: "error"
+        });
+        callback(new Error(rule.field + "为必填项"));
+      } else {
+        callback();
+      }
+    };
+    const validateCoverUri = (rule, value, callback) => {
       if (value) {
         if (validURL(value)) {
           callback();
         } else {
-          this.$message({
-            message: "外链url填写不正确",
-            type: "error"
-          });
-          callback(new Error("外链url填写不正确"));
+          callback(new Error("图片链接不正确"));
         }
       } else {
         callback();
@@ -192,18 +210,42 @@ export default {
       loading: false,
       tagVisible: false,
       tagValue: "",
-      categoryValue: "",
+      reload: "true",
+      value: "",
       categories: [],
       tags: [],
       rules: {
-        image_uri: [{ validator: validateRequire }],
+        cover: [{ validator: validateCoverUri, trigger: "blur" }],
         title: [{ validator: validateRequire }],
-        content: [{ validator: validateRequire }],
-        source_uri: [{ validator: validateSourceUri, trigger: "blur" }]
+        content: [{ validator: validateContentRequire }],
+        excerpt: [{ validator: validateRequire }]
       }
     };
   },
   methods: {
+    querySearch(queryString, cb) {
+      var tags = this.tags;
+      var results = queryString
+        ? tags.filter(this.createFilter(queryString))
+        : tags;
+      // 调用 callback 返回建议列表的数据
+      cb(results);
+    },
+    createFilter(queryString) {
+      return tag => {
+        return (
+          tag.tagName.toLowerCase().indexOf(queryString.toLowerCase()) === 0
+        );
+      };
+    },
+    handleSelect(item) {
+      if (this.postForm.tags.indexOf(item) === -1) {
+        this.postForm.tags.push(item);
+      }
+
+      this.tagValue = "";
+      this.tagVisible = false;
+    },
     async getTags() {
       const { data } = await tag.getTags();
       this.tags = data;
@@ -220,34 +262,110 @@ export default {
     handleClose(tag) {
       this.postForm.tags.splice(this.postForm.tags.indexOf(tag), 1);
     },
-    handleBlur(val) {
-      this.$refs.saveTagSelect.$refs.input.blur = () => {
-        console.log(0);
-        this.tagVisible = false;
-      };
-    },
     showInput() {
       this.tagVisible = true;
+      this.$nextTick(_ => {
+        this.$refs.saveInputTag.handleChange = val => {
+          console.log(this.tagValue);
+          if (val) {
+            let flag = true;
+            //判断标签是否已添加
+            this.postForm.tags.forEach((i, index) => {
+              if (val === i.tagName) {
+                flag = false;
+              }
+            });
+            let item = { id: undefined, tagName: val };
+            //判断标签是否存在
+            this.tags.forEach((i, index) => {
+              if (val === i.tagName) {
+                item = i;
+              }
+            });
+            if (flag) {
+              this.postForm.tags.push(item);
+            }
+          }
+          this.tagVisible = false;
+          this.tagValue = "";
+        };
+      });
     },
 
-    handleInputConfirm(val) {
-      // let inputValue = this.tagValue;
-      // if (inputValue) {
-      //   this.tags.push(inputValue);
-      // }
-      //this.postForm.tags.push(val);
-      this.tagVisible = false;
-      console.log(this.postForm.tags);
-      // this.tagValue = "";
+    submit(formName, stateName) {
+      this.$refs[formName].validate(async valid => {
+        if (valid) {
+          try {
+            console.log(this.postForm);
+            this.postForm.state = states[stateName];
+            if (this.isEdit) {
+              if (this.isEquel(this.postForm, this.form)) {
+                this.$emit("handleBack", false);
+                return;
+              }
+
+              console.log(this.postForm);
+              try {
+                await article.updateArticle(this.postForm);
+                this.$message.success("修改成功");
+                this.$emit("handleBack", true);
+              } catch (e) {
+                this.$message.error("修改失败");
+              }
+            } else {
+              try {
+                await article.createArticle(this.postForm);
+                this.$message.success("新建成功");
+                this.resetForm();
+              } catch (e) {
+                this.$message.success("新建失败");
+              }
+              console.log(this.postForm);
+            }
+          } catch (e) {
+            console.log(e);
+            this.$message.error("操作失败");
+          }
+        } else {
+          return false;
+        }
+      });
+    },
+    resetForm() {
+      this.postForm.tags.splice(0, this.postForm.tags.length);
+      //this.$refs.upload.$refs.linkInput.value = "";
+      this.postForm = JSON.parse(JSON.stringify(defaultForm));
+      this.reload = false;
+
+      this.$nextTick(() => {
+        this.reload = true;
+      });
+    },
+    // 判断是否有更改字段
+    isEquel(source, target) {
+      let isEquel = true;
+      for (let key in source) {
+        if (Array.isArray(source[key])) {
+          if (source[key].join("") !== target[key].join("")) {
+            isEquel = false;
+          }
+        } else {
+          if (source[key] !== target[key]) {
+            isEquel = false;
+          }
+        }
+      }
+      return isEquel;
     }
   },
-
+  mounted() {},
   created() {
     if (this.isEdit) {
       this.categories = this.infoCategories;
       this.tags = this.infoTags;
       this.postForm = JSON.parse(JSON.stringify(this.form));
     } else {
+      this.postForm.tags.splice(0, this.postForm.tags.length);
       this.getTags();
       this.getCategoies();
     }
@@ -327,6 +445,9 @@ export default {
 }
 .el-tag + .el-tag {
   margin-left: 10px;
+  :last-child {
+    margin-right: 10px;
+  }
 }
 .button-new-tag {
   margin-left: 10px;

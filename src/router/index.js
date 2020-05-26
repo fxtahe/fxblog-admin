@@ -1,6 +1,10 @@
 import Vue from "vue";
 import VueRouter from "vue-router";
 import Layout from "@/layout";
+const originalPush = VueRouter.prototype.push;
+VueRouter.prototype.push = function push(location) {
+  return originalPush.call(this, location).catch((err) => err);
+};
 
 Vue.use(VueRouter);
 
@@ -74,7 +78,8 @@ const routes = [
         meta: { title: "Article List", icon: "list" }
       },
       {
-        path: "create",
+        path: "/create",
+        query: new Date(),
         component: () => import("@/views/article/create"),
         name: "Create",
         meta: { title: "Create Article", icon: "edit" }

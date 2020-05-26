@@ -29,5 +29,5 @@ export default {
   exportmd: true,
   importmd: true,
   save: false,
-  clear: false
+  clear: true
 };

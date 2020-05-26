@@ -13,11 +13,10 @@
             <el-form-item label="浏览次数">
               <span>{{ props.row.views }}</span>
             </el-form-item>
-            <el-form-item label="标签">
+            <el-form-item label="标签" v-if="props.row.tags.length > 0">
               <el-tag class="tag-item" v-for="tag in props.row.tags" :key="tag.id">{{tag.tagName}}</el-tag>
-              <!-- <span class="tag-item" v-for="tag in props.row.tags" :key="tag.id">{{ tag.tagName }}</span> -->
             </el-form-item>
-            <el-form-item label="赞">
+            <el-form-item label="喜欢">
               <span>{{ props.row.like }}</span>
             </el-form-item>
             <el-form-item v-if="props.row.cover" label="封面">
@@ -35,7 +34,8 @@
       <el-table-column prop="star" label="推荐">
         <template slot-scope="scope">
           <i
-            :class="['star el-icon-star-off', scope.row.feature === 1 ? 'star-on' : '']"
+            v-if="scope.row.state === 2"
+            :class="['star el-icon-star-off', scope.row.feature ? 'star-on' : '']"
             @click="setFeature(scope.row)"
           ></i>
         </template>
@@ -61,6 +61,7 @@
 </template>
 
 <script>
+import article from "@/api/article";
 const stateMap = {
   1: "草稿",
   2: "发布",
@@ -106,18 +107,58 @@ export default {
     },
 
     editArticle(val) {
+      console.log("edit");
+      console.log(val);
       this.$emit("handleEdit", val);
     },
 
     // 推荐文章
-    async setFeature(val) {},
+    async setFeature(val) {
+      let message = "";
+      val.feature
+        ? ((val.feature = false), (message = "取消"))
+        : ((val.feature = true), (message = "设置"));
+      try {
+        this.loading = true;
+        await article.updateArticleFeature(val);
+        this.$message.success(message + "推荐成功");
+        this.loading = false;
+      } catch (e) {
+        this.$message.error(message + "推荐失败");
+        this.loading = false;
+      }
+    },
 
     showComments(val) {
       this.currentId = val.id;
       this.dialogVisible = true;
     },
 
-    deleteArticle(val) {}
+    deleteArticle(val) {
+      this.$confirm("此操作将永久删除文章, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning"
+      })
+        .then(async () => {
+          try {
+            this.loading = true;
+            await article.deleteArticle(val.id);
+            //console.log(this.page);
+            //this.handleCurrentChange(this.page);
+            this.$emit("handleInfoResult", true);
+            this.loading = false;
+
+            this.$message.success("删除成功");
+          } catch (e) {
+            this.loading = false;
+            this.$message.error("删除失败");
+          }
+        })
+        .catch(() => {
+          this.$message.info("已取消删除");
+        });
+    }
   }
 };
 </script>

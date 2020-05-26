@@ -32,6 +32,7 @@
                   autosize
                   filterable
                   multiple
+                  clearable
                   :multiple-limit="multipleLimit"
                   placeholder="标签"
                 >
@@ -48,15 +49,15 @@
               <el-form-item label="状态">
                 <el-radio-group v-model="queryForm.state">
                   <el-radio label>全部</el-radio>
-                  <el-radio :label="1">发布</el-radio>
-                  <el-radio :label="2">草稿</el-radio>
+                  <el-radio :label="2">发布</el-radio>
+                  <el-radio :label="1">草稿</el-radio>
                 </el-radio-group>
               </el-form-item>
             </el-col>
           </el-row>
           <el-row type="flex" class="row-bg" justify="center">
-            <el-col :span="6">
-              <el-button type="primary" size="medium" @click="query()">查询</el-button>
+            <el-col :span="4">
+              <el-button type="primary" size="medium" @click="queryPage()">查询</el-button>
               <el-button size="medium" @click="clearQuery()">重置</el-button>
             </el-col>
           </el-row>
@@ -66,7 +67,7 @@
         <article-table
           :total="total"
           :articles="articles"
-          :currentPage="currentPage"
+          :currentPage.sync="currentPage"
           @handleInfoResult="onHandleInfoResult"
           @handleEdit="onHandleEdit"
           @handleCurrentPage="onHandleCurrentPage"
@@ -90,7 +91,9 @@ import ArticleTable from "./components/article-table";
 import article from "@/api/article";
 import category from "@/api/category";
 import tag from "@/api/tag";
-
+const form = {
+  state: ""
+};
 export default {
   name: "articleList",
   components: {
@@ -108,7 +111,7 @@ export default {
       tableLoading: false,
       articles: [],
       isEdit: false,
-      queryForm: {},
+      queryForm: form,
       editForm: {}
     };
   },
@@ -121,20 +124,22 @@ export default {
       const { data } = await category.getCategories();
       this.categories = data;
     },
+    queryPage() {
+      this.query(this.currentPage);
+    },
     async query(current = 1) {
       this.tableLoading = true;
+
       try {
         let param = {
           size: this.size,
-          data: this.form,
+          data: this.queryForm,
           current
         };
 
         const { data } = await article.getArticlePage(param);
-        console.log(data);
         if (data) {
-          console.log(data.data);
-          this.currentPage = data[current];
+          this.currentPage = data.current;
           this.total = data.total;
           this.articles = data.data;
         }
@@ -150,13 +155,20 @@ export default {
         this.query();
       }
     },
-    onSubmit() {},
-    onHandleInfoResult(flag) {},
+    onHandleInfoResult(flag) {
+      if (flag) {
+        this.query();
+      }
+    },
     onHandleCurrentPage(current) {
       this.query(current);
     },
     onHandleBack(flag) {
       this.isEdit = false;
+      if (flag) {
+        this.getTags();
+        this.query();
+      }
     },
     async onHandleEdit(data) {
       let edit = {
@@ -165,11 +177,11 @@ export default {
         excerpt: data.excerpt,
         author: data.author,
         createdDate: data.createDate,
-        updateDate: data.UpdateDate,
+        updateDate: data.updateDate,
         cover: data.cover,
         content: data.content,
         category: data.category,
-        tags: data.tags.map(v => v.id),
+        tags: data.tags,
         state: data.state,
         feature: data.feature
       };

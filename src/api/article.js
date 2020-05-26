@@ -14,7 +14,7 @@ class Article {
 
   // 删除某篇文章
   async deleteArticle(id) {
-    const res = await del(`/article/delete?id=${id}`);
+    const res = await del(`/article/delete/${id}`);
     return res;
   }
 
