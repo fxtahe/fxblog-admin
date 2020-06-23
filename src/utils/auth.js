@@ -1,15 +1,28 @@
-import Cookies from "js-cookie";
+import cookies from "js-cookie";
 
-const TokenKey = "fxblog_token";
-
-export function getToken() {
-  return Cookies.get(TokenKey);
+export function saveTokens(accessToken, refreshToken) {
+  cookies.set("access_token", `Bearer ${accessToken}`);
+  cookies.set("refresh_token", `Bearer ${refreshToken}`);
 }
 
-export function setToken(token) {
-  return Cookies.set(TokenKey, token);
+export function saveAccessToken(accessToken) {
+  cookies.set("access_token", `Bearer ${accessToken}`);
 }
 
+export function getToken(tokenKey) {
+  return cookies.get(tokenKey);
+}
+export function getAccessToken() {
+  console.log("get accessToken" + getToken("access_token"));
+  return getToken("access_token");
+}
+export function getRefreshToken() {
+  return getToken("refresh_token");
+}
 export function removeToken() {
-  return Cookies.remove(TokenKey);
+  cookies.remove("access_token");
+  cookies.remove("refresh_token");
+  sessionStorage.removeItem("flag");
+  sessionStorage.clear();
+  localStorage.clear();
 }

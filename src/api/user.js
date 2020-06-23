@@ -2,23 +2,42 @@ import request from "@/utils/request";
 
 export function login(data) {
   return request({
-    url: "/fxblog/user/login",
+    url: "/login",
     method: "post",
-    data
+    data,
+    transformRequest: [
+      function (data) {
+        // Do whatever you want to transform the data
+        let ret = "";
+        for (let it in data) {
+          ret +=
+            encodeURIComponent(it) + "=" + encodeURIComponent(data[it]) + "&";
+        }
+        return ret;
+      }
+    ],
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    }
   });
 }
 
-export function getInfo(token) {
+export function getInfo() {
   return request({
-    url: "/fxblog/user/info",
-    method: "get",
-    params: { token }
+    url: "/author/get/info",
+    method: "get"
   });
 }
 
 export function logout() {
   return request({
-    url: "/fxblog/user/logout",
+    url: "/logout",
     method: "post"
+  });
+}
+export function refreshToken() {
+  return request({
+    url: "/auth/refresh",
+    method: "get"
   });
 }

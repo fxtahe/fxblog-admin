@@ -1,8 +1,8 @@
 import axios from "axios";
-import { MessageBox, Message } from "element-ui";
+import { Message } from "element-ui";
 import store from "@/store";
-import { getToken } from "@/utils/auth";
-
+import author from "@/api/author";
+import { getRefreshToken, getAccessToken } from "./auth";
 // create an axios instance
 const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API, // url = base url + request url
@@ -13,14 +13,32 @@ const service = axios.create({
 // request interceptor
 service.interceptors.request.use(
   (config) => {
+    console.log(config);
     // do something before request is sent
-
-    if (store.getters.token) {
-      // let each request carry token
-      // ['X-Token'] is a custom headers key
-      // please modify it according to the actual situation
-      config.headers["X-Token"] = getToken();
+    if (!config.url) {
+      throw new Error({
+        source: "axiosInterceptors",
+        message: "request need url"
+      });
     }
+    // 默认使用 get 请求
+    if (!config.method) {
+      config.method = "get";
+    }
+    config.method = config.method.toLowerCase();
+
+    if (config.url === "/auth/refresh") {
+      const refreshToken = getRefreshToken();
+      if (refreshToken) {
+        config.headers.Authorization = refreshToken;
+      }
+    } else {
+      const accessToken = getAccessToken();
+      if (accessToken) {
+        config.headers.Authorization = accessToken;
+      }
+    }
+
     return config;
   },
   (error) => {
@@ -42,38 +60,48 @@ service.interceptors.response.use(
    * Here is just an example
    * You can also judge the status by HTTP Status Code
    */
-  (response) => {
-    const res = response.data;
-    return res;
-    // if the custom code is not 20000, it is judged as an error.
-    // if (res.code !== 20000) {
-    //   Message({
-    //     message: res.message || "Error",
-    //     type: "error",
-    //     duration: 5 * 1000
-    //   });
+  async (response) => {
+    if (response.status === 200 && response.data.code === 200) {
+      return response.data;
+    }
+    return new Promise(async (resolve, reject) => {
+      // 将本次失败请求保存
+      const { params, url, method, data } = response.config;
+      console.log(response.config);
+      store.dispatch("user/refreshOptions", response.config);
+      const res = response.data;
+      // 处理 API 异常
+      let { code } = response.data;
+      if (code !== 200) {
+        if (code != 10001 || code != 10010 || code != 10002) {
+        }
+        console.log(code);
+        // 如果是令牌无效或者是 refreshToken 相关异常
+        if (code === 10010) {
+          store.dispatch("user/logout");
+        }
 
-    //   // 50008: Illegal token; 50012: Other clients logged in; 50014: Token expired;
-    //   if (res.code === 50008 || res.code === 50012 || res.code === 50014) {
-    //     // to re-login
-    //     MessageBox.confirm(
-    //       "You have been logged out, you can cancel to stay on this page, or log in again",
-    //       "Confirm logout",
-    //       {
-    //         confirmButtonText: "Re-Login",
-    //         cancelButtonText: "Cancel",
-    //         type: "warning"
-    //       }
-    //     ).then(() => {
-    //       store.dispatch("user/resetToken").then(() => {
-    //         location.reload();
-    //       });
-    //     });
-    //   }
-    //   return Promise.reject(new Error(res.message || "Error"));
-    // } else {
-    //   return res;
-    // }
+        // 令牌失效 或 令牌过期 需要重新刷新令牌
+        if (code === 10001 || code === 10002) {
+          const cache = {};
+          if (cache.url !== url) {
+            cache.url = url;
+            await author.getRefreshToken();
+            console.log(store.state.user.refreshOptions);
+            const result = await service(store.state.user.refreshOptions);
+
+            resolve(result);
+            return;
+          }
+        }
+      }
+      Message({
+        message: res.message || "Error",
+        type: "error",
+        duration: 5 * 1000
+      });
+      reject(response.data);
+    });
   },
   (error) => {
     console.log("err" + error); // for debug
