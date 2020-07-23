@@ -44,7 +44,6 @@ export default {
       try {
         let file = event.target.files[0];
         const { data } = await uploadFile.uploadImage(file);
-        console.log("data" + data);
         this.url = data.url;
         this.$emit("update:value", this.url);
         event.target.files = [];

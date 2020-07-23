@@ -15,10 +15,13 @@ export function isExternal(path) {
  * @returns {Boolean}
  */
 export function validUsername(str) {
-  const valid_map = ["admin", "editor"];
-  return valid_map.indexOf(str.trim()) >= 0;
+  const reg = /^[\u4E00-\u9FA5\uF900-\uFA2D|\w]{2,20}$/;
+  return reg.test(str);
 }
-
+export function validGithubUrl(url) {
+  const reg = /^(https):\/\/github\.com\/[\w]{1,10}/;
+  return reg.test(url);
+}
 /**
  * @param {string} url
  * @returns {Boolean}

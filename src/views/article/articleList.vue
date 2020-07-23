@@ -122,6 +122,7 @@ export default {
     },
     async getCategoies() {
       const { data } = await category.getCategories();
+      console.log(data);
       this.categories = data;
     },
     queryPage() {

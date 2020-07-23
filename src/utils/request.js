@@ -1,8 +1,10 @@
 import axios from "axios";
 import { Message } from "element-ui";
 import store from "@/store";
-import author from "@/api/author";
+
 import { getRefreshToken, getAccessToken } from "./auth";
+import { saveAccessToken } from "@/utils/auth";
+
 // create an axios instance
 const service = axios.create({
   baseURL: process.env.VUE_APP_BASE_API, // url = base url + request url
@@ -13,12 +15,12 @@ const service = axios.create({
 // request interceptor
 service.interceptors.request.use(
   (config) => {
-    console.log(config);
     // do something before request is sent
     if (!config.url) {
-      throw new Error({
-        source: "axiosInterceptors",
-        message: "request need url"
+      Message({
+        message: "缺失请求路径",
+        type: "error",
+        duration: 3 * 1000
       });
     }
     // 默认使用 get 请求
@@ -48,66 +50,77 @@ service.interceptors.request.use(
   }
 );
 
-// response interceptor
-service.interceptors.response.use(
-  /**
-   * If you want to get http information such as headers or status
-   * Please return  response => response
-   */
+/**
+ * token 刷新机制
+ * 参考：https://segmentfault.com/a/1190000016946316
+ */
+// 是否正在刷新的标记
+let isRefreshing = true;
+// 重试队列，每一项将是一个待执行的函数形式
+let subscribers = [];
+function onAccessTokenFetched() {
+  subscribers.forEach((callback) => {
+    callback();
+  });
+  subscribers = [];
+}
 
-  /**
-   * Determine the request status by custom code
-   * Here is just an example
-   * You can also judge the status by HTTP Status Code
-   */
-  async (response) => {
+function addSubscriber(callback) {
+  subscribers.push(callback);
+}
+function refreshTokenRequst() {
+  service({
+    url: "/auth/refresh",
+    method: "get"
+  })
+    .then((response) => {
+      const { data } = response;
+      saveAccessToken(data.access_token);
+      onAccessTokenFetched();
+      isRefreshing = true;
+    })
+    .catch((e) => {
+      Message({
+        message: "登录信息过期，请重新登录",
+        type: "error"
+      });
+      store.dispatch("user/logout");
+    });
+}
+service.interceptors.response.use(
+  (response) => {
     if (response.status === 200 && response.data.code === 200) {
       return response.data;
     }
-    return new Promise(async (resolve, reject) => {
-      // 将本次失败请求保存
-      const { params, url, method, data } = response.config;
-      console.log(response.config);
-      store.dispatch("user/refreshOptions", response.config);
-      const res = response.data;
-      // 处理 API 异常
-      let { code } = response.data;
-      if (code !== 200) {
-        if (code != 10001 || code != 10010 || code != 10002) {
-        }
-        console.log(code);
-        // 如果是令牌无效或者是 refreshToken 相关异常
-        if (code === 10010) {
-          store.dispatch("user/logout");
-        }
-
-        // 令牌失效 或 令牌过期 需要重新刷新令牌
-        if (code === 10001 || code === 10002) {
-          const cache = {};
-          if (cache.url !== url) {
-            cache.url = url;
-            await author.getRefreshToken();
-            console.log(store.state.user.refreshOptions);
-            const result = await service(store.state.user.refreshOptions);
-
-            resolve(result);
-            return;
-          }
-        }
+    let { code } = response.data;
+    if (code === 10001 || code === 10002) {
+      if (isRefreshing) {
+        refreshTokenRequst();
       }
+      isRefreshing = false;
+      return new Promise((resolve) => {
+        addSubscriber(() => {
+          resolve(service(response.config));
+        });
+      });
+    }
+    // 如果是令牌无效或者是 refreshToken 相关异常
+    if (code === 10010) {
+      store.dispatch("user/logout");
+      return;
+    }
+    if (code !== 200) {
       Message({
         message: res.message || "Error",
         type: "error",
         duration: 5 * 1000
       });
-      reject(response.data);
-    });
+    }
   },
   (error) => {
-    console.log("err" + error); // for debug
+    //console.log("err" + error); // for debug
     Message({
       message: error.message,
-      showClose: true,
       type: "error",
       duration: 5 * 1000
     });

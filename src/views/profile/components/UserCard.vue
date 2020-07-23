@@ -7,7 +7,7 @@
     <div class="user-profile">
       <div class="box-center">
         <div class="avatar-wrapper" @click="changeAvatar">
-          <img src="@/assets/header.jpg" class="user-avatar" />
+          <img :src="avatarUrl" class="user-avatar" />
         </div>
       </div>
       <div class="box-center">
@@ -25,62 +25,86 @@
       custom-class="croppa-dialog"
       center
     >
-      <el-row>
-        <el-col :span="12">
-          <div class="croppa-wrapper">
-            <vueCropper
-              ref="cropper"
-              :img="option.img"
-              :outputSize="option.size"
-              :outputType="option.outputType"
-              :info="option.true"
-              :full="option.full"
-              :canMove="option.canMove"
-              :canMoveBox="option.canMoveBox"
-              :original="option.original"
-              :autoCrop="option.autoCrop"
-              :autoCropWidth="option.autoCropWidth"
-              :autoCropHeight="option.autoCropHeight"
-              :fixed="option.fixed"
-              :fixedBox="option.fixedBox"
-              :fixedNumber="option.fixedNumber"
-              :centerBox="option.centerBox"
-              :infoTrue="option.infoTrue"
-              @realTime="realTime"
-            ></vueCropper>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div
-            class="croppa-preview"
-            :style="{'width': previews.w + 'px', 'height': previews.h + 'px',  'overflow': 'hidden',
-    'margin': '5px'}"
-          >
-            <div :style="previews.div" class>
-              <img :src="previews.url" :style="previews.img" />
+      <div class="cropper-content">
+        <el-row>
+          <el-col :span="12">
+            <div class="croppa-wrapper">
+              <vueCropper
+                ref="cropper"
+                :img="option.img"
+                :outputSize="option.size"
+                :outputType="option.outputType"
+                :info="option.true"
+                :full="option.full"
+                :canMove="option.canMove"
+                :canMoveBox="option.canMoveBox"
+                :original="option.original"
+                :autoCrop="option.autoCrop"
+                :autoCropWidth="option.autoCropWidth"
+                :autoCropHeight="option.autoCropHeight"
+                :fixed="option.fixed"
+                :fixedBox="option.fixedBox"
+                :fixedNumber="option.fixedNumber"
+                :centerBox="option.centerBox"
+                :infoTrue="option.infoTrue"
+                @realTime="realTime"
+              ></vueCropper>
             </div>
-          </div>
-        </el-col>
-      </el-row>
+          </el-col>
+          <el-col :span="12">
+            <div
+              class="croppa-preview"
+              :style="{'width': previews.w + 'px', 'height': previews.h + 'px',  'overflow': 'hidden','zoom':'0.75'}"
+            >
+              <div :style="previews.div" class>
+                <img :src="previews.url" :style="previews.img" />
+              </div>
+            </div>
+          </el-col>
+        </el-row>
+      </div>
       <el-row style="margin-top: 20px;">
         <el-col :span="2">
-          <a class="file-btn">
-            <i class="el-icon-upload"></i>
+          <a class="file-btn el-button--primary">
+            <i class="el-icon-upload el-button--primary"></i>
             <input
               type="file"
               name
               id
-              :value="imgFile"
               accept="image/png, image/jpeg, image/gif, image/jpg"
               @change="uploadImg($event, 1)"
             />
           </a>
         </el-col>
         <el-col :span="12" style="margin-left: 6%;">
-          <input type="button" class="croppa-btn" value="+" title="放大" @click="changeScale(1)" />
-          <input type="button" class="croppa-btn" value="-" title="缩小" @click="changeScale(-1)" />
-          <input type="button" class="croppa-btn" value="↺" title="左旋转" @click="rotateLeft" />
-          <input type="button" class="croppa-btn" value="↻" title="右旋转" @click="rotateRight" />
+          <input
+            type="button"
+            class="croppa-btn el-button--primary"
+            value="+"
+            title="放大"
+            @click="changeScale(1)"
+          />
+          <input
+            type="button"
+            class="croppa-btn el-button--primary"
+            value="-"
+            title="缩小"
+            @click="changeScale(-1)"
+          />
+          <input
+            type="button"
+            class="croppa-btn el-button--primary"
+            value="↺"
+            title="左旋转"
+            @click="rotateLeft"
+          />
+          <input
+            type="button"
+            class="croppa-btn el-button--primary"
+            value="↻"
+            title="右旋转"
+            @click="rotateRight"
+          />
         </el-col>
       </el-row>
       <div slot="footer" class="dialog-footer">
@@ -94,6 +118,8 @@
 <script>
 import { VueCropper } from "vue-cropper";
 import header from "@/assets/header.jpg";
+import uploadFile from "@/api/upload";
+import author from "@/api/author";
 export default {
   components: {
     VueCropper
@@ -118,7 +144,7 @@ export default {
       previews: {},
       fileName: "", //本机文件地址
       option: {
-        img: header, // 裁剪图片的地址
+        img: this.user.avatar, // 裁剪图片的地址
         info: true, // 裁剪框的大小信息
         outputSize: 1, // 裁剪生成图片的质量
         outputType: "png", // 裁剪生成图片的格式
@@ -126,7 +152,7 @@ export default {
         autoCrop: true, // 是否默认生成截图框
         autoCropWidth: 450, // 默认生成截图框宽度
         autoCropHeight: 450, // 默认生成截图框高度
-        fixedBox: true, // 固定截图框大小 不允许改变
+        fixedBox: false, // 固定截图框大小 不允许改变
         fixed: true, // 是否开启截图框宽高固定比例
         fixedNumber: [1, 1], // 截图框的宽高比例
         full: false, // 是否输出原图比例的截图
@@ -141,7 +167,15 @@ export default {
     handleClose() {
       this.cropVisible = false;
     },
-    handleCrop() {},
+    async handleCrop() {
+      this.$refs.cropper.getCropBlob(async img => {
+        const { data } = await uploadFile.uploadImage(img);
+        let param = { avatar: data.url };
+        await author.updateAvatar(param);
+        this.$store.dispatch("user/updateAvatar", data.url);
+      });
+      this.cropVisible = false;
+    },
     changeAvatar() {
       this.cropVisible = true;
     },
@@ -150,23 +184,19 @@ export default {
     },
     //放大/缩小
     changeScale(num) {
-      console.log("changeScale");
       num = num || 1;
       this.$refs.cropper.changeScale(num);
     },
     //左旋转
     rotateLeft() {
-      console.log("rotateLeft");
       this.$refs.cropper.rotateLeft();
     },
     //右旋转
     rotateRight() {
-      console.log("rotateRight");
       this.$refs.cropper.rotateRight();
     },
     //选择本地图片
     uploadImg(e, num) {
-      console.log("uploadImg");
       var _this = this;
       //上传图片
       var file = e.target.files[0];
@@ -194,6 +224,11 @@ export default {
       // reader.readAsDataURL(file)
       // 转化为blob
       reader.readAsArrayBuffer(file);
+    }
+  },
+  computed: {
+    avatarUrl() {
+      return this.$store.state.user.avatar;
     }
   }
 };
@@ -227,6 +262,8 @@ export default {
   overflow: hidden;
 }
 .croppa-btn {
+  border: none;
+  border-radius: 3px;
   height: 25px;
   width: 25px;
   font-size: 12px;
@@ -252,11 +289,11 @@ export default {
     top: 0;
     opacity: 0;
   }
-  &:hover {
-    background: #aadffd;
-    border-color: #78c3f3;
-    color: #004974;
-    text-decoration: none;
-  }
+  // &:hover {
+  //   background: #aadffd;
+  //   border-color: #78c3f3;
+  //   color: #004974;
+  //   text-decoration: none;
+  // }
 }
 </style>

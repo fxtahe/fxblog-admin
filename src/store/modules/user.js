@@ -1,13 +1,15 @@
-import { login, getInfo, refreshToken } from "@/api/user";
+import { login, getInfo } from "@/api/user";
 import { saveTokens, removeToken } from "@/utils/auth";
 import { resetRouter } from "@/router";
-
+import { Message } from "element-ui";
 const getDefaultState = () => {
   return {
     accessToken: "",
     refreshToken: "",
     name: "",
     avatar: "",
+    github: "",
+    email: "",
     introduction: "",
     roles: [],
     refreshOptions: {}
@@ -29,6 +31,12 @@ const mutations = {
   },
   SET_AVATAR: (state, avatar) => {
     state.avatar = avatar;
+  },
+  SET_GITHUB: (state, github) => {
+    state.github = github;
+  },
+  SET_EMAIL: (state, email) => {
+    state.email = email;
   },
   SET_INTRODUCTION: (state, introduction) => {
     state.introduction = introduction;
@@ -54,26 +62,43 @@ const actions = {
           resolve();
         })
         .catch((error) => {
+          Message({
+            message: "用户名或密码错误，请确认后重新登录",
+            type: "error"
+          });
           reject(error);
         });
     });
   },
-  refreshToken({ commit }) {},
+  updateAvatar({ commit }, avatar) {
+    return new Promise((resolve, reject) => {
+      commit("SET_AVATAR", avatar);
+      resolve();
+    });
+  },
   // get user info
   getInfo({ commit }) {
     return new Promise((resolve, reject) => {
       getInfo()
         .then((response) => {
           const { data } = response;
-
           if (!data) {
             reject("Verification failed, please Login again.");
           }
 
-          const { roles, authorName, avatar, introduction } = data;
+          const {
+            roles,
+            authorName,
+            email,
+            github,
+            avatar,
+            introduction
+          } = data;
           commit("SET_ROLES", roles);
           commit("SET_NAME", authorName);
           commit("SET_AVATAR", avatar);
+          commit("SET_EMAIL", email);
+          commit("SET_GITHUB", github);
           commit("SET_INTRODUCTION", introduction);
           resolve(data);
         })

@@ -13,7 +13,6 @@ export function getToken(tokenKey) {
   return cookies.get(tokenKey);
 }
 export function getAccessToken() {
-  console.log("get accessToken" + getToken("access_token"));
   return getToken("access_token");
 }
 export function getRefreshToken() {
