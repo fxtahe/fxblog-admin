@@ -7,46 +7,24 @@ VueRouter.prototype.push = function push(location) {
 };
 
 Vue.use(VueRouter);
-
-const categoryRouter = {
-  route: null,
-  name: null,
-  title: "分类管理",
-  type: "folder",
-  icon: "el-icon-collection-tag",
-  filePath: "views/category/",
-  order: null,
-  inNav: true,
-  children: [
-    {
-      title: "分类管理",
-      type: "view",
-      name: "category",
-      route: "/category/category",
-      filePath: "views/category/category.vue",
-      inNav: true,
-      icon: ""
-    },
-    {
-      title: "标签管理",
-      type: "view",
-      name: "tag",
-      route: "/category/tag",
-      filePath: "views/category/tag.vue",
-      inNav: true,
-      icon: ""
-    }
-  ]
-};
-const routes = [
+export const asyncRoutes = [
+  {
+    path: "/log",
+    component: Layout,
+    children: [
+      {
+        path: "log",
+        name: "log",
+        component: () => import("@/views/logmanage/index"),
+        meta: { title: "日志管理", icon: "bug", roles: ["admin"] }
+      }
+    ]
+  }
+];
+export const constantRoutes = [
   {
     path: "/login",
     component: () => import("@/views/login/index"),
-    hidden: true
-  },
-  {
-    path: "/404",
-    component: () => import("@/views/404"),
     hidden: true
   },
   {
@@ -56,9 +34,9 @@ const routes = [
     children: [
       {
         path: "dashboard",
-        name: "Dashboard",
+        name: "首页",
         component: () => import("@/views/dashboard/index"),
-        meta: { title: "Dashboard", icon: "dashboard", affix: true }
+        meta: { title: "首页", icon: "dashboard", affix: true }
       }
     ]
   },
@@ -67,7 +45,7 @@ const routes = [
     component: Layout,
     name: "Article",
     meta: {
-      title: "Article",
+      title: "文章",
       icon: "file-manage"
     },
     children: [
@@ -75,14 +53,14 @@ const routes = [
         path: "list",
         component: () => import("@/views/article/articleList"),
         name: "ArticleList",
-        meta: { title: "Article List", icon: "list" }
+        meta: { title: "文章列表" }
       },
       {
         path: "/create",
         query: new Date(),
         component: () => import("@/views/article/create"),
-        name: "Create",
-        meta: { title: "Create Article", icon: "edit" }
+        name: "新建文章",
+        meta: { title: "新建文章" }
       }
     ]
   },
@@ -91,33 +69,33 @@ const routes = [
     name: "Sitemap",
     component: Layout,
     meta: {
-      title: "Sitemap",
-      icon: "tag"
+      title: "标签分类",
+      icon: "table"
     },
     children: [
       {
         path: "category",
-        name: "Category",
+        name: "分类",
         component: () => import("@/views/sitemap/category"),
-        meta: { title: "Category", icon: "dashboard" }
+        meta: { title: "分类" }
       },
       {
         path: "tag",
-        name: "Tag",
+        name: "标签",
         component: () => import("@/views/sitemap/tag"),
-        meta: { title: "Tag", icon: "dashboard" }
+        meta: { title: "标签" }
       }
     ]
   },
   {
-    path: "/about",
+    path: "/website",
     component: Layout,
     children: [
       {
-        path: "about",
-        name: "About",
-        component: () => import("@/views/about/index"),
-        meta: { title: "About", icon: "dashboard" }
+        path: "website",
+        name: "关于网站",
+        component: () => import("@/views/website/index"),
+        meta: { title: "关于网站", icon: "guide" }
       }
     ]
   },
@@ -128,18 +106,23 @@ const routes = [
     children: [
       {
         path: "profile",
-        name: "Profile",
+        name: "个人中心",
         component: () => import("@/views/profile/index"),
-        meta: { title: "Profile", icon: "user" }
+        meta: { title: "个人中心", icon: "user" }
       }
     ]
+  },
+  {
+    path: "/404",
+    component: () => import("@/views/404"),
+    hidden: true
   }
 ];
 const createRouter = () =>
   new VueRouter({
     // mode: 'history', // require service support
     scrollBehavior: () => ({ y: 0 }),
-    routes: routes
+    routes: constantRoutes
   });
 const router = createRouter();
 

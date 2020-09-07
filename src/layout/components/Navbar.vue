@@ -16,16 +16,16 @@
         </div>
         <el-dropdown-menu slot="dropdown" class="user-dropdown">
           <router-link to="/">
-            <el-dropdown-item>Home</el-dropdown-item>
+            <el-dropdown-item>首页</el-dropdown-item>
           </router-link>
           <a target="_blank" :href="github">
             <el-dropdown-item>Github</el-dropdown-item>
           </a>
-          <router-link to="/profile">
+          <router-link to="/profile/profile">
             <el-dropdown-item>个人中心</el-dropdown-item>
           </router-link>
           <el-dropdown-item divided @click.native="logout">
-            <span style="display: block;">Log Out</span>
+            <span style="display: block;">登出</span>
           </el-dropdown-item>
         </el-dropdown-menu>
       </el-dropdown>
@@ -41,10 +41,10 @@ import Hamburger from "@/components/Hamburger";
 export default {
   components: {
     Breadcrumb,
-    Hamburger
+    Hamburger,
   },
   computed: {
-    ...mapGetters(["sidebar", "avatar", "github"])
+    ...mapGetters(["sidebar", "avatar", "github"]),
   },
   methods: {
     toggleSideBar() {
@@ -53,8 +53,8 @@ export default {
     async logout() {
       await this.$store.dispatch("user/logout");
       this.$router.push(`/login?redirect=${this.$route.fullPath}`);
-    }
-  }
+    },
+  },
 };
 </script>
 

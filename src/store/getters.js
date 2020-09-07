@@ -7,6 +7,8 @@ const getters = {
   github: (state) => state.user.github,
   email: (state) => state.user.email,
   introduction: (state) => state.user.introduction,
-  cachedViews: (state) => state.tagsView.cachedViews
+  cachedViews: (state) => state.tagsView.cachedViews,
+  roles: (state) => state.user.roles,
+  permission_routes: (state) => state.permission.routes
 };
 export default getters;

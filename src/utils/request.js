@@ -111,14 +111,13 @@ service.interceptors.response.use(
     }
     if (code !== 200) {
       Message({
-        message: res.message || "Error",
+        message: response.message || "Error",
         type: "error",
         duration: 5 * 1000
       });
     }
   },
   (error) => {
-    //console.log("err" + error); // for debug
     Message({
       message: error.message,
       type: "error",

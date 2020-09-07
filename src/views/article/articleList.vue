@@ -92,13 +92,13 @@ import article from "@/api/article";
 import category from "@/api/category";
 import tag from "@/api/tag";
 const form = {
-  state: ""
+  state: "",
 };
 export default {
   name: "articleList",
   components: {
     ArticleTable,
-    EditArticle
+    EditArticle,
   },
   data() {
     return {
@@ -112,18 +112,25 @@ export default {
       articles: [],
       isEdit: false,
       queryForm: form,
-      editForm: {}
+      editForm: {},
     };
   },
   methods: {
     async getTags() {
-      const { data } = await tag.getTags();
-      this.tags = data;
+      try {
+        const { data } = await tag.getTags();
+        this.tags = data;
+      } catch (e) {
+        console.log(e);
+      }
     },
     async getCategoies() {
-      const { data } = await category.getCategories();
-      console.log(data);
-      this.categories = data;
+      try {
+        const { data } = await category.getCategories();
+        this.categories = data;
+      } catch (e) {
+        console.log(e);
+      }
     },
     queryPage() {
       this.query(this.currentPage);
@@ -135,7 +142,7 @@ export default {
         let param = {
           size: this.size,
           data: this.queryForm,
-          current
+          current,
         };
 
         const { data } = await article.getArticlePage(param);
@@ -184,7 +191,7 @@ export default {
         category: data.category,
         tags: data.tags,
         state: data.state,
-        feature: data.feature
+        feature: data.feature,
       };
       try {
         this.editForm = edit;
@@ -193,13 +200,13 @@ export default {
         // eslint-disable-next-line no-console
         console.log(e);
       }
-    }
+    },
   },
   created() {
     this.getTags();
     this.getCategoies();
     this.query();
-  }
+  },
 };
 </script>
 <style lang="scss" scoped>
@@ -220,10 +227,6 @@ export default {
   position: relative;
   @include clearfix;
   margin-bottom: 10px;
-
-  .postInfo-container-item {
-    float: left;
-  }
 }
 .article-textarea ::vue-deep {
   textarea {

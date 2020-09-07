@@ -139,41 +139,40 @@ const defaultForm = {
   content: "show time", // 文章内容
   excerpt: "", // 文章摘要
   authorId: "", //作者
-  content: "",
   feature: false, //推荐
   cover: "", //封面
   state: "", //状态
   tags: [],
-  category: {}
+  category: {},
 };
 const states = {
   draft: 1,
-  post: 2
+  post: 2,
 };
 export default {
   components: {
     MarkdownEditor,
     MDinput,
-    ImageUpload
+    ImageUpload,
   },
   props: {
     isEdit: {
       type: Boolean,
-      default: false
+      default: false,
     },
     infoCategories: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
 
     infoTags: {
       type: Array,
-      default: () => []
+      default: () => [],
     },
     form: {
       type: Object,
-      default: () => {}
-    }
+      default: () => {},
+    },
   },
   data() {
     const validateRequire = (rule, value, callback) => {
@@ -187,7 +186,7 @@ export default {
       if (value === "") {
         this.$message({
           message: "内容不能为空",
-          type: "error"
+          type: "error",
         });
         callback(new Error(rule.field + "为必填项"));
       } else {
@@ -218,8 +217,8 @@ export default {
         cover: [{ validator: validateCoverUri, trigger: "blur" }],
         title: [{ validator: validateRequire }],
         content: [{ validator: validateContentRequire }],
-        excerpt: [{ validator: validateRequire }]
-      }
+        excerpt: [{ validator: validateRequire }],
+      },
     };
   },
   methods: {
@@ -232,7 +231,7 @@ export default {
       cb(results);
     },
     createFilter(queryString) {
-      return tag => {
+      return (tag) => {
         return (
           tag.tagName.toLowerCase().indexOf(queryString.toLowerCase()) === 0
         );
@@ -247,12 +246,20 @@ export default {
       this.tagVisible = false;
     },
     async getTags() {
-      const { data } = await tag.getTags();
-      this.tags = data;
+      try {
+        const { data } = await tag.getTags();
+        this.tags = data;
+      } catch (e) {
+        console.log(e);
+      }
     },
     async getCategoies() {
-      const { data } = await category.getCategories();
-      this.categories = data;
+      try {
+        const { data } = await category.getCategories();
+        this.categories = data;
+      } catch (e) {
+        console.log(e);
+      }
     },
     fitlerAll(arr) {
       let result = [].concat(arr);
@@ -264,9 +271,8 @@ export default {
     },
     showInput() {
       this.tagVisible = true;
-      this.$nextTick(_ => {
-        this.$refs.saveInputTag.handleChange = val => {
-          console.log(this.tagValue);
+      this.$nextTick((_) => {
+        this.$refs.saveInputTag.handleChange = (val) => {
           if (val) {
             let flag = true;
             //判断标签是否已添加
@@ -293,10 +299,9 @@ export default {
     },
 
     submit(formName, stateName) {
-      this.$refs[formName].validate(async valid => {
+      this.$refs[formName].validate(async (valid) => {
         if (valid) {
           try {
-            console.log(this.postForm);
             this.postForm.state = states[stateName];
             if (this.isEdit) {
               if (this.isEquel(this.postForm, this.form)) {
@@ -304,7 +309,6 @@ export default {
                 return;
               }
 
-              console.log(this.postForm);
               try {
                 await article.updateArticle(this.postForm);
                 this.$message.success("修改成功");
@@ -320,7 +324,6 @@ export default {
               } catch (e) {
                 this.$message.success("新建失败");
               }
-              console.log(this.postForm);
             }
           } catch (e) {
             console.log(e);
@@ -356,7 +359,7 @@ export default {
         }
       }
       return isEquel;
-    }
+    },
   },
   mounted() {},
   created() {
@@ -369,7 +372,7 @@ export default {
       this.getTags();
       this.getCategoies();
     }
-  }
+  },
 };
 </script>
 <style lang="scss" scoped>

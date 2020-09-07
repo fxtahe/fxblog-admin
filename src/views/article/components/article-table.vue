@@ -65,7 +65,7 @@ import article from "@/api/article";
 const stateMap = {
   1: "草稿",
   2: "发布",
-  3: "已删除"
+  3: "已删除",
 };
 export default {
   components: {},
@@ -73,18 +73,18 @@ export default {
   props: {
     articles: {
       type: Array,
-      default: () => {}
+      default: () => {},
     },
 
     currentPage: {
       type: Number,
-      default: 0
+      default: 0,
     },
 
     total: {
       type: Number,
-      default: 0
-    }
+      default: 0,
+    },
   },
 
   data() {
@@ -93,7 +93,7 @@ export default {
       loading: false,
       stateMap: stateMap,
       dialogVisible: false,
-      pageSize: 10
+      pageSize: 10,
     };
   },
 
@@ -107,8 +107,6 @@ export default {
     },
 
     editArticle(val) {
-      console.log("edit");
-      console.log(val);
       this.$emit("handleEdit", val);
     },
 
@@ -138,14 +136,12 @@ export default {
       this.$confirm("此操作将永久删除文章, 是否继续?", "提示", {
         confirmButtonText: "确定",
         cancelButtonText: "取消",
-        type: "warning"
+        type: "warning",
       })
         .then(async () => {
           try {
             this.loading = true;
             await article.deleteArticle(val.id);
-            //console.log(this.page);
-            //this.handleCurrentChange(this.page);
             this.$emit("handleInfoResult", true);
             this.loading = false;
 
@@ -158,8 +154,8 @@ export default {
         .catch(() => {
           this.$message.info("已取消删除");
         });
-    }
-  }
+    },
+  },
 };
 </script>
 

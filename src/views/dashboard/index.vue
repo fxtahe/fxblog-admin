@@ -1,6 +1,8 @@
 <template>
   <div class="dashboard-container">
-    <div class="dashboard-text">name: {{ name }}</div>
+    <div>
+      <img :src="emptyGif" class="emptyGif" />
+    </div>
   </div>
 </template>
 
@@ -10,19 +12,26 @@ import { mapGetters } from "vuex";
 export default {
   name: "Dashboard",
   computed: {
-    ...mapGetters(["name"])
-  }
+    ...mapGetters(["name"]),
+  },
+  data() {
+    return {
+      emptyGif:
+        "https://wpimg.wallstcn.com/0e03b7da-db9e-4819-ba10-9016ddfdaed3",
+    };
+  },
 };
 </script>
 
 <style lang="scss" scoped>
-.dashboard {
-  &-container {
-    margin: 30px;
-  }
-  &-text {
-    font-size: 30px;
-    line-height: 46px;
-  }
+.emptyGif {
+  display: block;
+  width: 45%;
+  margin: 0 auto;
+}
+.dashboard-container {
+  background-color: #e3e3e3;
+  min-height: 100vh;
+  padding: 50px 60px 0px;
 }
 </style>
