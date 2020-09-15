@@ -19,6 +19,18 @@ export const asyncRoutes = [
         meta: { title: "日志管理", icon: "bug", roles: ["admin"] }
       }
     ]
+  },
+  {
+    path: "/website",
+    component: Layout,
+    children: [
+      {
+        path: "website",
+        name: "关于网站",
+        component: () => import("@/views/website/index"),
+        meta: { title: "关于网站", icon: "guide" }
+      }
+    ]
   }
 ];
 export const constantRoutes = [
@@ -87,18 +99,7 @@ export const constantRoutes = [
       }
     ]
   },
-  {
-    path: "/website",
-    component: Layout,
-    children: [
-      {
-        path: "website",
-        name: "关于网站",
-        component: () => import("@/views/website/index"),
-        meta: { title: "关于网站", icon: "guide" }
-      }
-    ]
-  },
+
   {
     path: "/profile",
     component: Layout,
